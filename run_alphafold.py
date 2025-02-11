@@ -672,34 +672,6 @@ def main(_):
     print(f'Failed to create output directory {_OUTPUT_DIR.value}: {e}')
     raise
 
-  if _RUN_INFERENCE.value:
-    # Fail early on incompatible devices, but only if we're running inference.
-    gpu_devices = jax.local_devices(backend='gpu')
-    if gpu_devices:
-      compute_capability = float(
-          gpu_devices[_GPU_DEVICE.value].compute_capability
-      )
-      if compute_capability < 6.0:
-        raise ValueError(
-            'AlphaFold 3 requires at least GPU compute capability 6.0 (see'
-            ' https://developer.nvidia.com/cuda-gpus).'
-        )
-      elif 7.0 <= compute_capability < 8.0:
-        xla_flags = os.environ.get('XLA_FLAGS')
-        required_flag = '--xla_disable_hlo_passes=custom-kernel-fusion-rewriter'
-        if not xla_flags or required_flag not in xla_flags:
-          raise ValueError(
-              'For devices with GPU compute capability 7.x (see'
-              ' https://developer.nvidia.com/cuda-gpus) the ENV XLA_FLAGS must'
-              f' include "{required_flag}".'
-          )
-        if _FLASH_ATTENTION_IMPLEMENTATION.value != 'xla':
-          raise ValueError(
-              'For devices with GPU compute capability 7.x (see'
-              ' https://developer.nvidia.com/cuda-gpus) the'
-              ' --flash_attention_implementation must be set to "xla".'
-          )
-
   notice = textwrap.wrap(
       'Running AlphaFold 3. Please note that standard AlphaFold 3 model'
       ' parameters are only available under terms of use provided at'
@@ -741,11 +713,8 @@ def main(_):
     data_pipeline_config = None
 
   if _RUN_INFERENCE.value:
-    devices = jax.local_devices(backend='gpu')
-    print(
-        f'Found local devices: {devices}, using device {_GPU_DEVICE.value}:'
-        f' {devices[_GPU_DEVICE.value]}'
-    )
+    devices = jax.local_devices(backend='cpu')
+    print(f'Found local CPU devices: {devices}, using all devices for inference.')
 
     print('Building model from scratch...')
     model_runner = ModelRunner(
@@ -757,7 +726,6 @@ def main(_):
             num_recycles=_NUM_RECYCLES.value,
             return_embeddings=_SAVE_EMBEDDINGS.value,
         ),
-        device=devices[_GPU_DEVICE.value],
         model_dir=pathlib.Path(MODEL_DIR.value),
     )
     # Check we can load the model parameters before launching anything.
