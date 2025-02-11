@@ -212,7 +212,7 @@ _JAX_COMPILATION_CACHE_DIR = flags.DEFINE_string(
 )
 _GPU_DEVICE = flags.DEFINE_integer(
     'gpu_device',
-    0,
+    -1,
     'Optional override for the GPU device to use for inference. Defaults to the'
     ' 1st GPU on the system. Useful on multi-GPU systems to pin each run to a'
     ' specific GPU.',
@@ -229,15 +229,15 @@ _BUCKETS = flags.DEFINE_list(
 )
 _FLASH_ATTENTION_IMPLEMENTATION = flags.DEFINE_enum(
     'flash_attention_implementation',
-    default='triton',
-    enum_values=['triton', 'cudnn', 'xla'],
+    default='xla',
+    enum_values=['xla','none'],
     help=(
         "Flash attention implementation to use. 'triton' and 'cudnn' uses a"
         ' Triton and cuDNN flash attention implementation, respectively. The'
         ' Triton kernel is fastest and has been tested more thoroughly. The'
         " Triton and cuDNN kernels require Ampere GPUs or later. 'xla' uses an"
         ' XLA attention implementation (no flash attention) and is portable'
-        ' across GPU devices.'
+        ' across GPU devices.(changed by xhao)'
     ),
 )
 _NUM_RECYCLES = flags.DEFINE_integer(
