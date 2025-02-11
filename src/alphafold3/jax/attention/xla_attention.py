@@ -20,13 +20,15 @@ import jax.numpy as jnp
 import jaxtyping
 from jaxtyping import Array, Float, Int  # pylint: disable=g-multiple-import,g-importing-member
 import typeguard
+import os
 
+# 设置 XLA 使用所有 CPU 核心
+os.environ['XLA_FLAGS'] = f'--xla_cpu_multi_thread_eigen=true --xla_force_host_platform_device_count={os.cpu_count()}'
 
+jax.config.update('jax_platform_name', 'cpu')  # 强制 JAX 使用 CPU
 def _get_precision(
     backend: str, precision: precision_lib.DotPrecision
 ) -> jax.lax.Precision:
-  if backend == "gpu" and precision == precision_lib.DotPrecision.F32_F32:
-    return jax.lax.Precision.HIGHEST
   return jax.lax.Precision.DEFAULT
 
 
@@ -75,6 +77,13 @@ def _attend(
     k_indices: Int[Array, "*#B #H t"] | None,
 ) -> Float[Array, "*B T H D"]:
   """Computes attention."""
+  q = jax.lax.dot_general(
+        q, k,
+        (((q.ndim-1,), (k.ndim-1,)),  # 收缩维度
+        precision=q_k_dot_precision,
+        preferred_element_type=jnp.float32  # 强制分块类型为 FP32
+    )).astype(logits_dtype)
+  
   logits = einsum_with_dot_precision(
       "...qhd,...khd->...hqk", q, k, precision=q_k_dot_precision
   ).astype(logits_dtype)
@@ -121,9 +130,14 @@ class XlaDotProductAttention(base.DotProductAttention):
       bias: Float[Array, "*#B #H #T #t"] | None,
       mask: base.Mask | None,
       weights_v_dot_precision: precision_lib.DotPrecision,
-      q_indices: Int[Array, "*#B #H T"] | None = None,
-      k_indices: Int[Array, "*#B #H t"] | None = None,
+      q_indices:  None = None,
+      k_indices:  None = None,
   ) -> Float[Array, "*B T H D"]:
+
+  # 在调用 _attend 前添加
+    q = jnp.ascontiguousarray(q)
+    k = jnp.ascontiguousarray(k)
+    v = jnp.ascontiguousarray(v)
 
     return _attend(
         q,

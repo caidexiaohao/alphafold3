@@ -14,9 +14,7 @@ import typing
 from typing import Literal, TypeAlias
 
 from alphafold3.jax.attention import attention_base as base
-from alphafold3.jax.attention import flash_attention as attention_triton
 from alphafold3.jax.attention import xla_attention
-from alphafold3.jax.common import triton_utils
 import jax
 from jax.typing import DTypeLike  # pylint: disable=g-importing-member
 import jaxtyping
@@ -25,7 +23,7 @@ from jaxtyping import Bool  # pylint: disable=g-importing-member
 from jaxtyping import Float  # pylint: disable=g-importing-member
 import typeguard
 
-Implementation: TypeAlias = Literal["cudnn", "xla", "triton"]
+Implementation: TypeAlias = Literal["xla",'none']
 
 
 @jaxtyping.jaxtyped(typechecker=typeguard.typechecked)
@@ -92,25 +90,6 @@ def dot_product_attention(
           f"Unsupported named implementation. Must be one of {named_args}."
       )
 
-  if implementation == "cudnn":
-    if logits_dtype is not None:
-      raise ValueError(
-          "logits_dtype is not supported for cudnn implementation."
-      )
-    if precision is not None:
-      raise NotImplementedError(
-          "precision is not supported for cudnn implementation."
-      )
-
-    return jax.nn.dot_product_attention(
-        query=query,
-        key=key,
-        value=value,
-        bias=bias,
-        mask=mask,
-        implementation="cudnn",
-    )
-
   logits_dtype = base.AUTO if logits_dtype is None else logits_dtype
   precision = jax.lax.Precision.DEFAULT if precision is None else precision
 
@@ -122,18 +101,5 @@ def dot_product_attention(
       mask=mask,
   )
 
-  if implementation == "triton":
-    if not triton_utils.has_triton_support():
-      raise ValueError(
-          "implementation='triton' for FlashAttention is unsupported on this"
-          " GPU generation. Please use implementation='xla' instead."
-      )
-    return attention_triton.TritonFlashAttention()(*args, **kwargs)
-
-  if implementation is None and triton_utils.has_triton_support():
-    try:
-      return attention_triton.TritonFlashAttention()(*args, **kwargs)
-    except Exception:  # pylint: disable=broad-exception-caught
-      pass  # Fallback to XLA.
 
   return xla_attention.XlaDotProductAttention()(*args, **kwargs)
