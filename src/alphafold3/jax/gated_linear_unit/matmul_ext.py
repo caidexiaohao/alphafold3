@@ -15,7 +15,6 @@ import functools
 from typing import Any, TypeAlias
 
 from alphafold3.jax.common import array_view
-from alphafold3.jax.common import triton_utils
 from alphafold3.jax.gated_linear_unit import block
 from alphafold3.jax.gated_linear_unit import matmul_config
 import jax
