@@ -19,7 +19,7 @@ if received directly from Google. Use is subject to terms of use available at
 https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md
 """
 
-from openvino.inference_engine import IECore
+from openvino.runtime import Core
 from collections.abc import Callable, Sequence
 import csv
 import dataclasses
@@ -303,8 +303,8 @@ class ModelRunner:
     self._model_config = config
     self._device = device
     self._model_dir = model_dir
-    self._ie = IECore()           #加载openvino模型
-    self._model = self._ie.read_network(model="./weight/af3.xml", weights="./weight/af3.bin")
+    self._core = Core()           #加载openvino模型
+    self._model = self._core.read_model(model="./weight/af3.xml", weights="./weight/af3.bin")
     
   @functools.cached_property
   def model_params(self) -> hk.Params:
@@ -336,7 +336,7 @@ class ModelRunner:
         self._device,
     )
     #数据处理
-    exec_net = self._ie.load_network(network=self._model, device_name="CPU")
+    exec_net = self._core.compile_model(self._model, device_name="CPU")
     output = exec_net.infer(inputs=featurised_example)
     #输出处理
     result = jax.tree.map(np.asarray, output)
