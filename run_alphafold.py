@@ -19,7 +19,7 @@ if received directly from Google. Use is subject to terms of use available at
 https://github.com/google-deepmind/alphafold3/blob/main/WEIGHTS_TERMS_OF_USE.md
 """
 
-from openvino.runtime import Core
+from openvino import Core
 from collections.abc import Callable, Sequence
 import csv
 import dataclasses
