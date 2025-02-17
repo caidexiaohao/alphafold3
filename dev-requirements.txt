@@ -552,4 +552,5 @@ zstandard==0.23.0 \
     --hash=sha256:fe3b385d996ee0822fd46528d9f0443b880d4d05528fd26a9119a54ec3f91c69
     # via alphafold3 (pyproject.toml)
 openvino==2024.6.0
+    --hash=sha256:444a6d3a746dd728654877993c30582faefcad2868c80ec261839a144b8925bc
     #via xhao
