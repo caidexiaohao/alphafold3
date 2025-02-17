@@ -15,7 +15,6 @@ import typing
 from typing import Literal, TypeAlias
 
 from alphafold3.jax.common import array_view
-from alphafold3.jax.common import triton_utils
 from alphafold3.jax.gated_linear_unit import gated_linear_unit_base
 from alphafold3.jax.gated_linear_unit import matmul_ext
 import jax
