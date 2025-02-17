@@ -77,12 +77,6 @@ def _attend(
     k_indices: Int[Array, "*#B #H t"] | None,
 ) -> Float[Array, "*B T H D"]:
   """Computes attention."""
-  q = jax.lax.dot_general(
-        q, k,
-        (((q.ndim-1,), (k.ndim-1,)),  # 收缩维度
-        precision=q_k_dot_precision,
-        preferred_element_type=jnp.float32  # 强制分块类型为 FP32
-    )).astype(logits_dtype)
   
   logits = einsum_with_dot_precision(
       "...qhd,...khd->...hqk", q, k, precision=q_k_dot_precision
